@@ -1,0 +1,25 @@
+
+## Versions
+
+gpflow==1.0.0
+gpustat==0.6.0
+graphviz==0.8.4
+gym==0.9.4
+Keras-Preprocessing==1.1.0
+mujoco-py==0.5.7
+numpy==1.16.5
+pandas==1.1.2
+protobuf==3.13.0
+psutil==5.7.2
+scipy==1.3.3
+tensorboard==1.14.0
+tensorflow==1.14.0
+tensorflow-estimator==1.14.0
+torch==1.4.0
+torchvision==0.5.0
+matplotlib
+tqdm
+urllib3
+stein_thinning
+ksdp
+
