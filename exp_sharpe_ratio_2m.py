@@ -7,7 +7,7 @@ import tqdm
 N_arms = 2 # Number of arms
 N_components = 2 # Number of components in the GMM
 
-true_means = np.array([[0.2,0.8],[0.1,0.9]]) # True means of the arms
+true_means = np.array([[1.0,1.8],[0.1,2.7]]) # True means of the arms
  
 true_variance = np.array([0.1,0.1]) # True variance of the arms
 
@@ -37,16 +37,18 @@ def estimate_mean(samples,N_components = 2):
     mean_estimates = np.zeros(N_components)
     sorted_samples = np.sort(samples)
     diff = np.diff(sorted_samples)
+
     split_idx = np.argmax(diff) 
     mean_estimates[0] = np.mean(sorted_samples[0:split_idx])
     mean_estimates[1] = np.mean(sorted_samples[split_idx:])
     return mean_estimates
 
-def calculate_best_arm(samples, t, N_arms):
+def calculate_best_arm(samples,  N_arms):
     mean_rewards = np.zeros(N_arms)
     for arm_idx in range(N_arms):
         mean_estimates = estimate_mean(samples[arm_idx])
         mean_rewards[arm_idx] = np.max(mean_estimates)
+    return mean_rewards
 ### benchmark epsilon-greedy basic (assuming single gaussian) with epsilon-greedy with GMM of 2 components
 
 N_mc = 100 # Number of Monte Carlo simulations
@@ -75,8 +77,8 @@ if RUN_EXP:
             rewards_basic[mc,t] = np.max(true_means[arm_idx])
             #epsilon *= 0.99
             # Epsilon-greedy with GMM
-            if t<50:
-                arm_idx = np.random.choice(N_arms)
+            if t<200:
+                arm_idx = t%N_arms
             else:
                 if np.random.rand() < epsilon_gmm:
                     # Explore
@@ -84,7 +86,7 @@ if RUN_EXP:
                 else:
                     # Exploit
 
-                    arm_idx = np.argmax(calculate_best_arm(samples[mc], t, N_arms))
+                    arm_idx = np.argmax(calculate_best_arm(samples[mc], N_arms))
                 #epsilon_gmm *= 0.99
             samples[mc][arm_idx].append(sample_arm(true_means, true_variance, true_weights, arm_idx))
             rewards_gmm[mc,t] = np.max(true_means[arm_idx])
