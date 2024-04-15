@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import tqdm 
 from ksd import get_KSD
 import torch
+from sklearn.mixture import GaussianMixture
 # from scipy.stats import norm
 
 def pull_arm(arm,mean_mixtures,variance_mixtures,weight_mixtures):
@@ -52,20 +53,23 @@ def em_algorithm(samples,parameters,N_components = 2, N_iter = 100):
         variance[(variance-0)<0.1] = 1e-1
     return weights, means, variance
 ### Thompson Sampling
-def thompson_sampling(samples,parameters,N_components = 2, N_iter = 100,N_arms=2):
+def epsilon_greedy(samples,parameters,N_components = 2, N_iter = 100,N_arms=2):
     reward_samples = np.zeros(N_arms)
     parameters_returned = []
     for i in range(N_arms):
         parameters_arm = parameters[i]
-       
-        weights, means, variance = em_algorithm(samples[i],parameters_arm,N_components = N_components, N_iter = N_iter)
+        gmm = GaussianMixture(n_components = N_components)
+        gmm.fit(np.array(samples[i]).reshape(-1,1))
+        weights = gmm.weights_
+        means = gmm.means_
+        variance = gmm.covariances_
         parameters_returned.append([weights,means,variance])
-        weight_sample = np.random.dirichlet(weights)
-        mean_arms = np.random.normal(means,variance)
-        mean_arm = np.random.normal(means,variance)
-        reward_samples[i] = np.max(mean_arms/variance)
+        reward_samples[i] = np.max(means/variance)
 
-    return np.argmax(reward_samples),parameters_returned
+    if np.random.uniform() < 0.2:
+        return np.random.choice(N_arms),parameters_returned
+    else:
+        return np.argmax(reward_samples),parameters_returned
 
 def ksd_index(armSamples,parameters,lambda_,time,):
     """
@@ -108,7 +112,7 @@ def ksd_ucb(samples,parameters,lambda_,time,N_arms =2):
         ### Compute KSD
         ksd_indices[i],parameters_returned = ksd_index(armSamples,parameters_arm,lambda_,time) 
         parameters_returned_set.append(parameters_returned)
-    return np.argmax(ksd_indices),parameters_returned_set
+    return np.argmax(np.abs(ksd_indices)),parameters_returned_set
 
 
 ### Gaussian Mixture Bandits
@@ -117,56 +121,56 @@ N_components = 2
 
 ###
 T = 1000
+N_MC = 10
 N_methods = 2
-N_MC = 100
+sample_max = 1000
+N_iter = 100
 regret = np.zeros((N_MC,N_methods,T))
 
 RUN_EXP = 1
 if RUN_EXP:
-    for mc in range(N_MC):
+    for mc in tqdm.tqdm(range(N_MC)):
 
-        mean_mixtures = np.random.normal(0,1,(N_arms,N_components))
-        variance_mixtures = np.random.uniform(0.1,1,(N_arms,N_components))
-        weights = np.random.dirichlet(np.ones(N_components),N_arms)
+        mean_mixtures = np.array([[0.1,0.9],[0.5,0.5]])
+        variance_mixtures = np.array([[0.1,0.1],[0.1,0.1]])
+        weights = np.array([[0.5,0.5],[0.5,0.5]])
 
         sharpe_ratios = compute_sharpe_ratio_mixture(mean_mixtures,variance_mixtures).reshape(-1,1)
         assert sharpe_ratios.shape == (N_arms,1)
 
 
         optimal_arm = np.argmax(sharpe_ratios)
-        print(sharpe_ratios)
-        print(optimal_arm, " is the optimal arm")
-
+        
         total_data =[ [[] for i in range(N_arms)] for j in range(N_methods)]
-        sample_max = 10
+        
         weights = np.random.dirichlet(np.ones(N_components),N_arms)
         mean_mixtures = np.random.normal(0,1,(N_arms,N_components))
         variance_mixtures = np.random.uniform(0.1,1,(N_arms,N_components))
-        parameters_thompson = [ [weights[:,_],mean_mixtures[_],variance_mixtures[_]] for _ in range(N_arms)]
-        parameters_ksd = [ [weights[:,_],mean_mixtures[_],variance_mixtures[_]] for _ in range(N_arms)]
+        parameters_thompson = [ [weights[_],mean_mixtures[_],variance_mixtures[_]] for _ in range(N_arms)]
+        parameters_ksd = [ [weights[_],mean_mixtures[_],variance_mixtures[_]] for _ in range(N_arms)]
         for _ in range(N_arms):
             for j in range(10):
             
                 total_data[0][_].append(pull_arm(_,mean_mixtures,variance_mixtures,weights))
                 total_data[1][_].append(pull_arm(_,mean_mixtures,variance_mixtures,weights))
-        for t in tqdm.tqdm(range(T)):
+        for t in range(T):
             ### pull arm 10 times for each method
             
-            arm,parameters_thompson = thompson_sampling(total_data[0],parameters_thompson,N_components = N_components, N_iter = 100,N_arms=N_arms)
+            arm,parameters_thompson = epsilon_greedy(total_data[0],parameters_thompson,N_components = N_components, N_arms=N_arms)
             reward = pull_arm(arm,mean_mixtures,variance_mixtures,weights)
-            regret[mc,0,t] = np.max(sharpe_ratios) - sharpe_ratios[arm]
+            regret[mc,0,t] = np.max(sharpe_ratios.flatten()) - sharpe_ratios.flatten()[arm]
             total_data[0][arm].append(reward)
             for arm_idx in range(N_arms):
                 if len(total_data[0][arm_idx])>sample_max:
                     total_data[0][arm_idx] = total_data[0][arm_idx][-sample_max:]
 
-            arm,parameters_ksd = ksd_ucb(total_data[1],parameters_ksd,lambda_=0.1,time = t)
-            reward = pull_arm(arm,mean_mixtures,variance_mixtures,weights)
-            regret[mc,1,t] = np.max(sharpe_ratios) - sharpe_ratios[arm]
-            total_data[1][arm].append(reward)
-            for arm_idx in range(N_arms):
-                if len(total_data[1][arm_idx])>sample_max:
-                    total_data[1][arm_idx] = total_data[1][arm_idx][-sample_max:]
+            # arm,parameters_ksd = ksd_ucb(total_data[1],parameters_ksd,lambda_=0.1,time = t)
+            # reward = pull_arm(arm,mean_mixtures,variance_mixtures,weights)
+            # regret[mc,1,t] = np.max(sharpe_ratios) - sharpe_ratios[arm]
+            # total_data[1][arm].append(reward)
+            # for arm_idx in range(N_arms):
+            #     if len(total_data[1][arm_idx])>sample_max:
+            #         total_data[1][arm_idx] = total_data[1][arm_idx][-sample_max:]
     np.save("parameters/regret_sharperatio.npy",regret)
 
 regret = np.load("parameters/regret_sharperatio.npy")
