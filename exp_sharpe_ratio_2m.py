@@ -9,7 +9,7 @@ N_components = 2 # Number of components in the GMM
 
 true_means = np.array([[1.0,1.8],[0.1,2.7]]) # True means of the arms
  
-true_variance = np.array([0.1,0.1]) # True variance of the arms
+true_variance = np.array([0.5,0.5]) # True variance of the arms
 
 true_weights = np.array([0.5,0.5]) # True weights of the arms
 
@@ -77,7 +77,7 @@ if RUN_EXP:
             rewards_basic[mc,t] = np.max(true_means[arm_idx])
             #epsilon *= 0.99
             # Epsilon-greedy with GMM
-            if t<200:
+            if t<100:
                 arm_idx = t%N_arms
             else:
                 if np.random.rand() < epsilon_gmm:
@@ -91,12 +91,12 @@ if RUN_EXP:
             samples[mc][arm_idx].append(sample_arm(true_means, true_variance, true_weights, arm_idx))
             rewards_gmm[mc,t] = np.max(true_means[arm_idx])
 
-    np.save('rewards_basic',rewards_basic)
-    np.save('rewards_gmm',rewards_gmm)
+    np.save('parameters/rewards_basic',rewards_basic)
+    np.save('parameters/rewards_gmm',rewards_gmm)
 
 
-rewards_basic = np.load('rewards_basic.npy')
-rewards_gmm = np.load('rewards_gmm.npy')
+rewards_basic = np.load('parameters/rewards_basic.npy')
+rewards_gmm = np.load('parameters/rewards_gmm.npy')
 
 ### pseudo-regret calculation
 best_mean = np.max(true_means)
@@ -115,6 +115,7 @@ plt.plot(np.mean(regret_gmm,axis=0),label='Epsilon-Greedy with GMM')
 plt.fill_between(np.arange(T),np.mean(regret_basic,axis=0) - 2*np.std(regret_basic,axis=0)/np.sqrt(N_mc),np.mean(regret_basic,axis=0) + 2*np.std(regret_basic,axis=0)/np.sqrt(N_mc),alpha=0.2)
 plt.fill_between(np.arange(T),np.mean(regret_gmm,axis=0) - 2*np.std(regret_gmm,axis=0)/np.sqrt(N_mc),np.mean(regret_gmm,axis=0) + 2*np.std(regret_gmm,axis=0)/np.sqrt(N_mc),alpha=0.2)
 plt.xlabel('Rounds')
+plt.title("Pseudo Regret of $\epsilon$-greedy for GMM with variance = 0.5")
 plt.ylabel('Pseudo-Regret')
 plt.legend()
-plt.savefig('pseudo_regret.png')
+plt.savefig(f'plots/pseudo_regret_0.5_100.png')
