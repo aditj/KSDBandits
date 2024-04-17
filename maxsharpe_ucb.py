@@ -86,7 +86,7 @@ if RUN_UCB:
             # Update the number of pulls
             N_pulls[arm_idx] += 1
             # Store the rewards
-            rewards_basic[i,t] = sample
+            rewards_basic[i,t] = np.max(true_means[arm_idx])
 
             ### UCB with GMM
             mean_rewards = np.zeros(N_arms)
@@ -96,7 +96,6 @@ if RUN_UCB:
                 mean_rewards[arm_idx] = mean_estimates
             # Calculate the upper confidence bounds
             UCB = mean_rewards + confidence
-            print(UCB)
             # Choose the arm with the highest UCB
             arm_idx = np.argmax(UCB)
             # Sample from the chosen arm
@@ -106,7 +105,7 @@ if RUN_UCB:
             # Update the number of pulls
             N_pulls[arm_idx] += 1
             # Store the rewards
-            rewards_gmm[i,t] = sample
+            rewards_gmm[i,t] = np.max(true_means[arm_idx])
 
     np.save('parameters/rewards_basic_ucb',rewards_basic)
     np.save('parameters/rewards_gmm_ucb',rewards_gmm)
