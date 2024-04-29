@@ -35,7 +35,7 @@ def estimate_max_sharpe_ratio(samples,N_components = 2):
 
 ### benchmark ucb basic (assuming single gaussian) with ucb with GMM of 2 components
 
-N_mc = 100 # Number of Monte Carlo simulations
+N_mc = 1 # Number of Monte Carlo simulations
 
 T = 10000 # Number of rounds
 
@@ -101,12 +101,12 @@ if RUN_UCB:
             # Store the rewards
             rewards_gmm[i,t] = np.max(true_means[arm_idx])
 
-    np.save('parameters/rewards_basic_ucb',rewards_basic)
-    np.save('parameters/rewards_gmm_ucb',rewards_gmm)
+    np.save('parameters/rewards_basic_ucb_4mix',rewards_basic)
+    np.save('parameters/rewards_gmm_ucb_4mix',rewards_gmm)
 
 
-rewards_basic = np.load('parameters/rewards_basic_ucb.npy')
-rewards_gmm = np.load('parameters/rewards_gmm_ucb.npy')
+rewards_basic = np.load('parameters/rewards_basic_ucb_4mix.npy')
+rewards_gmm = np.load('parameters/rewards_gmm_ucb_4mix.npy')
 
 ### pseudo-regret calculation
 best_mean = np.max(true_means)
@@ -128,5 +128,5 @@ plt.legend()
 plt.xlabel('Rounds')
 plt.ylabel('Pseudo-regret')
 plt.title('Pseudo-regret of UCB with GMM')
-plt.savefig('plots/ucb_gmm_0.2.png')
+plt.savefig('plots/ucb_gmm_4mix.png')
 
