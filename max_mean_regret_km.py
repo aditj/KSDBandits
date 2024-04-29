@@ -106,7 +106,7 @@ if RUN_UCB:
 
 
 rewards_basic = np.load('parameters/rewards_basic_ucb_4mix.npy')
-rewards_gmm = np.load('parameters/rewards_gmm_ucb_4mix.npy')
+rewards_gmm = np.load('parameters/rewards_gmm_ucb_4mix .npy')
 
 ### pseudo-regret calculation
 best_mean = np.max(true_means)
