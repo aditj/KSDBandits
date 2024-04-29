@@ -7,7 +7,7 @@ N_components = 2 # Number of components in the GMM
 
 true_means = np.array([[1.0,1.8],[0.1,2.7]]) # True means of the arms
  
-true_variance = np.array([0.1,0.1]) # True variance of the arms
+true_variance = np.array([0.3,0.3]) # True variance of the arms
 
 true_weights = np.array([0.5,0.5]) # True weights of the arms
 
@@ -41,7 +41,7 @@ def estimate_max_sharpe_ratio(samples,N_components = 2):
 
 ### benchmark ucb basic (assuming single gaussian) with ucb with GMM of 2 components
 
-N_mc = 10 # Number of Monte Carlo simulations
+N_mc = 100 # Number of Monte Carlo simulations
 
 T = 10000 # Number of rounds
 
@@ -61,14 +61,14 @@ if RUN_UCB:
         N_pulls = np.zeros(N_arms)
         # Initialize the rewards
         # Pull each arm once
-        for _ in range(100):
+        for _ in range(10):
             for arm_idx in range(N_arms):
                 sample = sample_arm(true_means, true_variance, true_weights, arm_idx)
                 samples_basic[arm_idx].append(sample)
                 samples_gmm[arm_idx].append(sample)
                 N_pulls[arm_idx] += 1
         # Pull each arm T times
-        for t in range(100*N_arms//2,T):
+        for t in range(10*N_arms//2,T):
             ### Classical UCB 
             # Calculate the mean rewards
             mean_rewards = np.zeros(N_arms)
@@ -128,8 +128,8 @@ plt.figure()
 plt.plot(np.mean(regret_basic,axis=0),label='UCB Basic')
 plt.plot(np.mean(regret_gmm,axis=0),label='UCB with GMM')
 
-# plt.fill_between(np.arange(T),np.mean(regret_basic,axis=0) - 2*np.std(regret_basic,axis=0)/np.sqrt(N_mc),np.mean(regret_basic,axis=0) + 2*np.std(regret_basic,axis=0)/np.sqrt(N_mc),alpha=0.2)
-# plt.fill_between(np.arange(T),np.mean(regret_gmm,axis=0) - 2*np.std(regret_gmm,axis=0)/np.sqrt(N_mc),np.mean(regret_gmm,axis=0) + 2*np.std(regret_gmm,axis=0)/np.sqrt(N_mc),alpha=0.2)
+plt.fill_between(np.arange(T),np.mean(regret_basic,axis=0) - 2*np.std(regret_basic,axis=0)/np.sqrt(N_mc),np.mean(regret_basic,axis=0) + 2*np.std(regret_basic,axis=0)/np.sqrt(N_mc),alpha=0.2)
+plt.fill_between(np.arange(T),np.mean(regret_gmm,axis=0) - 2*np.std(regret_gmm,axis=0)/np.sqrt(N_mc),np.mean(regret_gmm,axis=0) + 2*np.std(regret_gmm,axis=0)/np.sqrt(N_mc),alpha=0.2)
 plt.legend()
 plt.xlabel('Rounds')
 plt.ylabel('Pseudo-regret')
